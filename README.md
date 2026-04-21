@@ -1,208 +1,504 @@
-<p align="center">
-  <img src="logo.svg" width="200px" align="center" alt="Zod logo" />
-  <h1 align="center">Zod</h1>
-  <p align="center">
-    TypeScript-first schema validation with static type inference
-    <br/>
-    by <a href="https://x.com/colinhacks">@colinhacks</a>
-  </p>
-</p>
-<br/>
+# zod-validation-error
 
-<p align="center">
-<a href="https://github.com/colinhacks/zod/actions?query=branch%3Amain"><img src="https://github.com/colinhacks/zod/actions/workflows/test.yml/badge.svg?event=push&branch=main" alt="Zod CI status" /></a>
-<a href="https://opensource.org/licenses/MIT" rel="nofollow"><img src="https://img.shields.io/github/license/colinhacks/zod" alt="License"></a>
-<a href="https://www.npmjs.com/package/zod" rel="nofollow"><img src="https://img.shields.io/npm/dw/zod.svg" alt="npm"></a>
-<a href="https://discord.gg/KaSRdyX2vc" rel="nofollow"><img src="https://img.shields.io/discord/893487829802418277?label=Discord&logo=discord&logoColor=white" alt="discord server"></a>
-<a href="https://github.com/colinhacks/zod" rel="nofollow"><img src="https://img.shields.io/github/stars/colinhacks/zod" alt="stars"></a>
-</p>
+Wrap zod validation errors in user-friendly readable messages.
 
-<div align="center">
-  <a href="https://zod.dev/api">Docs</a>
-  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://discord.gg/RcG33DQJdf">Discord</a>
-  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://twitter.com/colinhacks">𝕏</a>
-  <span>&nbsp;&nbsp;•&nbsp;&nbsp;</span>
-  <a href="https://bsky.app/profile/zod.dev">Bluesky</a>
-  <br />
-</div>
+[![Build Status](https://github.com/causaly/zod-validation-error/actions/workflows/ci.yml/badge.svg)](https://github.com/causaly/zod-validation-error/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/zod-validation-error.svg?color=0c0)](https://www.npmjs.com/package/zod-validation-error)
 
-<br/>
-<br/>
+#### Features
 
-<h2 align="center">Featured sponsor: Jazz</h2>
+- User-friendly readable error messages with extensive configuration options;
+- Preserves original error details accessible via `error.details`;
+- Provides a custom error map for better user-friendly messages;
+- Supports both Zod v3 and v4.
 
-<div align="center">
-  <a href="https://jazz.tools/?utm_source=zod">
-    <picture width="85%" >
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/garden-co/jazz/938f6767e46cdfded60e50d99bf3b533f4809c68/homepage/homepage/public/Zod%20sponsor%20message.png">
-      <img alt="jazz logo" src="https://raw.githubusercontent.com/garden-co/jazz/938f6767e46cdfded60e50d99bf3b533f4809c68/homepage/homepage/public/Zod%20sponsor%20message.png" width="85%">
-    </picture>
-  </a>
-  <br/>
-  <p><sub>Learn more about <a target="_blank" rel="noopener noreferrer" href="mailto:sponsorship@colinhacks.com">featured sponsorships</a></sub></p>
-</div>
-
-<br/>
-<br/>
-<br/>
-
-### [Read the docs →](https://zod.dev/api)
-
-<br/>
-<br/>
-
-## What is Zod?
-
-Zod is a TypeScript-first validation library. Define a schema and parse some data with it. You'll get back a strongly typed, validated result.
-
-```ts
-import * as z from "zod";
-
-const User = z.object({
-  name: z.string(),
-});
-
-// some untrusted data...
-const input = {
-  /* stuff */
-};
-
-// the parsed result is validated and type safe!
-const data = User.parse(input);
-
-// so you can use it with confidence :)
-console.log(data.name);
-```
-
-<br/>
-
-## Features
-
-- Zero external dependencies
-- Works in Node.js and all modern browsers
-- Tiny: `2kb` core bundle (gzipped)
-- Immutable API: methods return a new instance
-- Concise interface
-- Works with TypeScript and plain JS
-- Built-in JSON Schema conversion
-- Extensive ecosystem
-
-<br/>
+**_Note:_** This version of `zod-validation-error` works with zod v4. If you are looking for zod v3 support, please refer to the [v3 documentation](./README.v3.md)
 
 ## Installation
 
-```sh
-npm install zod
+```bash
+npm install zod-validation-error
 ```
 
-<br/>
+#### Requirements
 
-## Basic usage
+- Node.js v.18+
+- TypeScript v.4.5+
 
-Before you can do anything else, you need to define a schema. For the purposes of this guide, we'll use a simple object schema.
+## Quick start
 
-```ts
-import * as z from "zod";
+```typescript
+import { z as zod } from 'zod';
+import { fromError, createErrorMap } from 'zod-validation-error';
 
-const Player = z.object({
-  username: z.string(),
-  xp: z.number(),
+// configure zod to use zod-validation-error's error map
+// this is optional, you may also use your own custom error map or zod's native error map
+// we recommend using zod-validation-error's error map for better user-friendly messages
+// see https://zod.dev/error-customization for further details
+zod.config({
+  customError: createErrorMap(),
 });
-```
 
-### Parsing data
+// create zod schema
+const zodSchema = zod.object({
+  id: zod.int().positive(),
+  email: zod.email(),
+});
 
-Given any Zod schema, use `.parse` to validate an input. If it's valid, Zod returns a strongly-typed _deep clone_ of the input.
-
-```ts
-Player.parse({ username: "billie", xp: 100 });
-// => returns { username: "billie", xp: 100 }
-```
-
-**Note** — If your schema uses certain asynchronous APIs like `async` [refinements](https://zod.dev/api#refinements) or [transforms](https://zod.dev/api#transforms), you'll need to use the `.parseAsync()` method instead.
-
-```ts
-const schema = z.string().refine(async (val) => val.length <= 8);
-
-await schema.parseAsync("hello");
-// => "hello"
-```
-
-### Handling errors
-
-When validation fails, the `.parse()` method will throw a `ZodError` instance with granular information about the validation issues.
-
-```ts
+// parse some invalid value
 try {
-  Player.parse({ username: 42, xp: "100" });
+  zodSchema.parse({
+    id: 1,
+    email: 'coyote@acme', // note: invalid email
+  });
 } catch (err) {
-  if (err instanceof z.ZodError) {
-    err.issues;
-    /* [
-      {
-        expected: 'string',
-        code: 'invalid_type',
-        path: [ 'username' ],
-        message: 'Invalid input: expected string'
-      },
-      {
-        expected: 'number',
-        code: 'invalid_type',
-        path: [ 'xp' ],
-        message: 'Invalid input: expected number'
-      }
-    ] */
+  const validationError = fromError(err);
+  // the error is now readable by the user
+  // you may print it to console
+  console.log(validationError.toString());
+  // or return it as an actual error
+  return validationError;
+}
+```
+
+## Motivation
+
+Zod errors are difficult to consume for the end-user. This library wraps Zod validation errors in user-friendly readable messages that can be exposed to the outer world, while maintaining the original errors in an array for _dev_ use.
+
+### Example
+
+#### Input (from Zod)
+
+```json
+[
+  {
+    "origin": "number",
+    "code": "too_small",
+    "minimum": 0,
+    "inclusive": false,
+    "path": ["id"],
+    "message": "Number must be greater than 0 at \"id\""
+  },
+  {
+    "origin": "string",
+    "code": "invalid_format",
+    "format": "email",
+    "pattern": "/^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$/",
+    "path": ["email"],
+    "message": "Invalid email at \"email\""
   }
-}
+]
 ```
 
-To avoid a `try/catch` block, you can use the `.safeParse()` method to get back a plain result object containing either the successfully parsed data or a `ZodError`. The result type is a [discriminated union](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions), so you can handle both cases conveniently.
+#### Output
 
-```ts
-const result = Player.safeParse({ username: 42, xp: "100" });
-if (!result.success) {
-  result.error; // ZodError instance
-} else {
-  result.data; // { username: string; xp: number }
-}
+```
+Validation error: Number must be greater than 0 at "id"; Invalid email at "email"
 ```
 
-**Note** — If your schema uses certain asynchronous APIs like `async` [refinements](#refine) or [transforms](#transform), you'll need to use the `.safeParseAsync()` method instead.
+## API
 
-```ts
-const schema = z.string().refine(async (val) => val.length <= 8);
+- [ValidationError(message[, options])](#validationerror)
+- [createErrorMap(options)](#createErrorMap)
+- [createMessageBuilder(options)](#createMessageBuilder)
+- [isValidationError(error)](#isvalidationerror)
+- [isValidationErrorLike(error)](#isvalidationerrorlike)
+- [isZodErrorLike(error)](#iszoderrorlike)
+- [fromError(error[, options])](#fromerror)
+- [fromZodIssue(zodIssue[, options])](#fromzodissue)
+- [fromZodError(zodError[, options])](#fromzoderror)
+- [toValidationError([options]) => (error) => ValidationError](#tovalidationerror)
 
-await schema.safeParseAsync("hello");
-// => { success: true; data: "hello" }
+### ValidationError
+
+Main `ValidationError` class, extending JavaScript's native `Error`.
+
+#### Arguments
+
+- `message` - _string_; error message (required)
+- `options` - _ErrorOptions_; error options as per [JavaScript definition](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/Error#options) (optional)
+  - `options.cause` - _any_; can be used to hold the original zod error (optional)
+
+#### Example 1: construct new ValidationError with `message`
+
+```typescript
+import { ValidationError } from 'zod-validation-error';
+
+const error = new ValidationError('foobar');
+console.log(error instanceof Error); // prints true
 ```
 
-### Inferring types
+#### Example 2: construct new ValidationError with `message` and `options.cause`
 
-Zod infers a static type from your schema definitions. You can extract this type with the `z.infer<>` utility and use it however you like.
+```typescript
+import { z as zod } from 'zod';
+import { ValidationError } from 'zod-validation-error';
 
-```ts
-const Player = z.object({
-  username: z.string(),
-  xp: z.number(),
+const error = new ValidationError('foobar', {
+  cause: new zod.ZodError([
+    {
+      origin: 'number',
+      code: 'too_small',
+      minimum: 0,
+      inclusive: false,
+      path: ['id'],
+      message: 'Number must be greater than 0 at "id"',
+      input: -1,
+    },
+  ]),
 });
 
-// extract the inferred type
-type Player = z.infer<typeof Player>;
-
-// use it in your code
-const player: Player = { username: "billie", xp: 100 };
+console.log(error.details); // prints issues from zod error
 ```
 
-In some cases, the input & output types of a schema can diverge. For instance, the `.transform()` API can convert the input from one type to another. In these cases, you can extract the input and output types independently:
+### createErrorMap
 
-```ts
-const mySchema = z.string().transform((val) => val.length);
+Creates zod-validation-error's `errorMap`, which is used to format issues into user-friendly error messages.
 
-type MySchemaIn = z.input<typeof mySchema>;
-// => string
+We think that zod's native error map is not user-friendly enough, so we provide our own implementation that formats issues into human-readable messages.
 
-type MySchemaOut = z.output<typeof mySchema>; // equivalent to z.infer<typeof mySchema>
-// number
+Note: zod-validation-error's `errorMap` is an errorMap like all others and thus can also be used directly with `zod` (see https://zod.dev/error-customization for further details), e.g.
+
+#### Arguments
+
+- `options` - _Object_; formatting options (optional)
+
+##### createErrorMap Options
+
+| Name                            |               Type                | Description                                                                                                                                                                                                            |
+| ------------------------------- | :-------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `displayInvalidFormatDetails`   |             `boolean`             | Indicates whether to display invalid format details (e.g. regexp pattern) in the error message (optional, defaults to `false`)                                                                                         |
+| `maxAllowedValuesToDisplay`     |             `number`              | Max number of allowed values to display (optional, defaults to `10`). Allowed values beyond this limit will be hidden.                                                                                                 |
+| `allowedValuesSeparator`        |             `string`              | Used to concatenate allowed values in the message (optional, defaults to `", "`)                                                                                                                                       |
+| `allowedValuesLastSeparator`    |       `string \| undefined`       | Used to concatenate last allowed value in the message (optional, defaults to `" or "`). Set to `undefined` to disable.                                                                                                 |
+| `wrapAllowedValuesInQuote`      |             `boolean`             | Indicates whether to wrap allowed values in quotes (optional, defaults to `true`). Note that this only applies to string values.                                                                                       |
+| `maxUnrecognizedKeysToDisplay`  |             `number`              | Max number of unrecognized keys to display in the error message (optional, defaults to `5`)                                                                                                                            |
+| `unrecognizedKeysSeparator`     |             `string`              | Used to concatenate unrecognized keys in the message (optional, defaults to `", "`)                                                                                                                                    |
+| `unrecognizedKeysLastSeparator` |       `string \| undefined`       | Used to concatenate the last unrecognized key in message (optional, defaults to `" and "`). Set to `undefined` to disable.                                                                                             |
+| `wrapUnrecognizedKeysInQuote`   |             `boolean`             | Indicates whether to wrap unrecognized keys in quotes (optional, defaults to `true`). Note that this only applies to string keys.                                                                                      |
+| `dateLocalization`              | `boolean \| Intl.LocalesArgument` | Indicates whether to localize date values (optional, defaults to `true`). If set to `true`, it will use the default locale of the environment. You can also pass `Intl.LocalesArgument` to specify a custom locale.    |
+| `numberLocalization`            | `boolean \| Intl.LocalesArgument` | Indicates whether to localize numeric values (optional, defaults to `true`). If set to `true`, it will use the default locale of the environment. You can also pass `Intl.LocalesArgument` to specify a custom locale. |
+
+#### Example
+
+```typescript
+import { z as zod } from 'zod';
+import { createErrorMap } from 'zod-validation-error';
+
+zod.config({
+  customError: createErrorMap({
+    // default values are used when not specified
+    displayInvalidFormatDetails: true,
+  }),
+});
 ```
+
+### createMessageBuilder
+
+Creates zod-validation-error's default `MessageBuilder`, which is used to produce user-friendly error messages.
+
+Meant to be passed as an option to [fromError](#fromerror), [fromZodIssue](#fromzodissue), [fromZodError](#fromzoderror) or [toValidationError](#tovalidationerror).
+
+#### Arguments
+
+- `options` - _Object_; formatting options (optional)
+
+##### createMessageBuilder Options
+
+| Name                 |         Type          | Description                                                                                                                              |
+| -------------------- | :-------------------: | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `maxIssuesInMessage` |       `number`        | Max issues to include in user-friendly message (optional, defaults to `99`)                                                              |
+| `issueSeparator`     |       `string`        | Used to concatenate issues in user-friendly message (optional, defaults to `";"`)                                                        |
+| `unionSeparator`     |       `string`        | Used to concatenate union-issues in user-friendly message (optional, defaults to `" or "`)                                               |
+| `prefix`             | `string \| undefined` | Prefix to use in user-friendly message (optional, defaults to `"Validation error"`). Pass `undefined` to disable prefix completely.      |
+| `prefixSeparator`    |       `string`        | Used to concatenate prefix with rest of the user-friendly message (optional, defaults to `": "`). Not used when `prefix` is `undefined`. |
+| `includePath`        |       `boolean`       | Indicates whether to include the erroneous property key in the error message (optional, defaults to `true`)                              |
+| `forceTitleCase`     |       `boolean`       | Indicates whether to convert individual issue messages to title case (optional, defaults to `true`).                                     |
+
+#### Example
+
+```typescript
+import { createMessageBuilder } from 'zod-validation-error';
+
+const messageBuilder = createMessageBuilder({
+  maxIssuesInMessage: 3,
+  includePath: false,
+});
+```
+
+### isValidationError
+
+A [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) utility function, based on `instanceof` comparison.
+
+#### Arguments
+
+- `error` - error instance (required)
+
+#### Example
+
+```typescript
+import { z as zod } from 'zod';
+import { ValidationError, isValidationError } from 'zod-validation-error';
+
+const err = new ValidationError('foobar');
+isValidationError(err); // returns true
+
+const invalidErr = new Error('foobar');
+isValidationError(err); // returns false
+```
+
+### isValidationErrorLike
+
+A [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) utility function, based on _heuristics_ comparison.
+
+_Why do we need heuristics since we can use a simple `instanceof` comparison?_ Because of multi-version inconsistencies. For instance, it's possible that a dependency is using an older `zod-validation-error` version internally. In such case, the `instanceof` comparison will yield invalid results because module deduplication does not apply at npm/yarn level and the prototype is different.
+
+tl;dr if you are uncertain then it is preferable to use `isValidationErrorLike` instead of `isValidationError`.
+
+#### Arguments
+
+- `error` - error instance (required)
+
+#### Example
+
+```typescript
+import { ValidationError, isValidationErrorLike } from 'zod-validation-error';
+
+const err = new ValidationError('foobar');
+isValidationErrorLike(err); // returns true
+
+const invalidErr = new Error('foobar');
+isValidationErrorLike(err); // returns false
+```
+
+### isZodErrorLike
+
+A [type guard](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates) utility function, based on _heuristics_ comparison.
+
+_Why do we need heuristics since we can use a simple `instanceof` comparison?_ Because of multi-version inconsistencies. For instance, it's possible that a dependency is using an older `zod` version internally. In such case, the `instanceof` comparison will yield invalid results because module deduplication does not apply at npm/yarn level and the prototype is different.
+
+#### Arguments
+
+- `error` - error instance (required)
+
+#### Example
+
+```typescript
+import { z as zod } from 'zod';
+import { ValidationError, isZodErrorLike } from 'zod-validation-error';
+
+const zodValidationErr = new ValidationError('foobar');
+isZodErrorLike(zodValidationErr); // returns false
+
+const genericErr = new Error('foobar');
+isZodErrorLike(genericErr); // returns false
+
+const zodErr = new zod.ZodError([
+  {
+    origin: 'number',
+    code: 'too_small',
+    minimum: 0,
+    inclusive: false,
+    path: ['id'],
+    message: 'Number must be greater than 0 at "id"',
+    input: -1,
+  },
+]);
+isZodErrorLike(zodErr); // returns true
+```
+
+### fromError
+
+Converts an error to `ValidationError`.
+
+_What is the difference between `fromError` and `fromZodError`?_ The `fromError` function is a less strict version of `fromZodError`. It can accept an unknown error and attempt to convert it to a `ValidationError`.
+
+#### Arguments
+
+- `error` - _unknown_; an error (required)
+- `options` - _Object_; formatting options (optional)
+  - `messageBuilder` - _MessageBuilder_; a function that accepts an array of `zod.ZodIssue` objects and returns a user-friendly error message in the form of a `string` (optional).
+
+#### Notes
+
+Alternatively, you may pass [createMessageBuilder options](#createmessagebuilder-options) directly as `options`. These will be used as arguments to create the `MessageBuilder` instance internally.
+
+### fromZodIssue
+
+Converts a single zod issue to `ValidationError`.
+
+#### Arguments
+
+- `zodIssue` - _zod.ZodIssue_; a ZodIssue instance (required)
+- `options` - _Object_; formatting options (optional)
+  - `messageBuilder` - _MessageBuilder_; a function that accepts an array of `zod.ZodIssue` objects and returns a user-friendly error message in the form of a `string` (optional).
+
+#### Notes
+
+Alternatively, you may pass [createMessageBuilder options](#createmessagebuilder-options) directly as `options`. These will be used as arguments to create the `MessageBuilder` instance internally.
+
+### fromZodError
+
+Converts zod error to `ValidationError`.
+
+_Why is the difference between `ZodError` and `ZodIssue`?_ A `ZodError` is a collection of 1 or more `ZodIssue` instances. It's what you get when you call `zodSchema.parse()`.
+
+#### Arguments
+
+- `zodError` - _zod.ZodError_; a ZodError instance (required)
+- `options` - _Object_; formatting options (optional)
+  - `messageBuilder` - _MessageBuilder_; a function that accepts an array of `zod.ZodIssue` objects and returns a user-friendly error message in the form of a `string` (optional).
+
+#### Notes
+
+Alternatively, you may pass [createMessageBuilder options](#createmessagebuilder-optionscreateMessageBuilder) directly as `options`. These will be used as arguments to create the `MessageBuilder` instance internally.
+
+### toValidationError
+
+A curried version of `fromZodError` meant to be used for FP (Functional Programming). Note it first takes the options object if needed and returns a function that converts the `zodError` to a `ValidationError` object
+
+```js
+toValidationError(options) => (zodError) => ValidationError
+```
+
+#### Example using fp-ts
+
+```typescript
+import * as Either from 'fp-ts/Either';
+import { z as zod } from 'zod';
+import { toValidationError, ValidationError } from 'zod-validation-error';
+
+// create zod schema
+const zodSchema = zod
+  .object({
+    id: zod.int().positive(),
+    email: zod.email(),
+  })
+  .brand<'User'>();
+
+export type User = zod.infer<typeof zodSchema>;
+
+export function parse(
+  value: zod.input<typeof zodSchema>
+): Either.Either<ValidationError, User> {
+  return Either.tryCatch(() => schema.parse(value), toValidationError());
+}
+```
+
+## FAQ
+
+### What is the difference between zod-validation-error and zod's own [prettifyError](https://zod.dev/error-formatting#zprettifyerror)?
+
+While both libraries aim to provide a human-readable string representation of a zod error, they differ in several ways...
+
+1. **End-user focus**: zod-validation-error provides opinionated, user-friendly error messages designed to be displayed directly to end-users in forms or API responses.
+1. **Customization options**: zod-validation-error offers extensive configuration for message formatting, such as controlling path inclusion, allowed values display, localization, and more.
+1. **Error handling**: zod-validation-error maintains the original error details while providing a clean, consistent interface through the ValidationError class.
+1. **Integration flexibility**: Beyond just formatting, zod-validation-error provides utility functions for error detection and conversion that work well in various architectural patterns, e.g. functional programming.
+
+Disclaimer: as per this [comment](https://github.com/causaly/zod-validation-error/issues/455#issuecomment-2811895152), we have no intention to antagonize zod. In fact, we are happy to decommission this module assuming it's in the best interest of the community. As of now, it seems that there's room for both `zod-validation-error` and `prettifyError`, also based on Colin McDonnell's [response](https://github.com/causaly/zod-validation-error/issues/455#issuecomment-2814466019).
+
+### Do I need to use `zod-validation-error`'s error map?
+
+No, you can use zod's native error map if you prefer. However, we recommend using `zod-validation-error`'s error map for better user-friendly messages.
+
+You may also use your own custom error map if you have specific requirements, e.g. internationalization.
+
+### Where can I see how `zod-validation-error`'s error map formatting works?
+
+The easiest way to understand how `zod-validation-error`'s error map works is to look at the [tests](./lib/v4/errorMap/errorMap.test.ts). They cover various scenarios and demonstrate how the error map formats issues into user-friendly messages.
+
+### How to distinguish between errors
+
+Use the `isValidationErrorLike` type guard.
+
+#### Example
+
+Scenario: Distinguish between `ValidationError` VS generic `Error` in order to respond with 400 VS 500 HTTP status code respectively.
+
+```typescript
+import { isValidationErrorLike } from 'zod-validation-error';
+
+try {
+  func(); // throws Error - or - ValidationError
+} catch (err) {
+  if (isValidationErrorLike(err)) {
+    return 400; // Bad Data (this is a client error)
+  }
+
+  return 500; // Server Error
+}
+```
+
+### How to use `ValidationError` outside `zod`
+
+It's possible to implement custom validation logic outside `zod` and throw a `ValidationError`.
+
+#### Example 1: passing custom message
+
+```typescript
+import { ValidationError } from 'zod-validation-error';
+import { Buffer } from 'node:buffer';
+
+function parseBuffer(buf: unknown): Buffer {
+  if (!Buffer.isBuffer(buf)) {
+    throw new ValidationError('Invalid argument; expected buffer');
+  }
+
+  return buf;
+}
+```
+
+#### Example 2: passing custom message and original error as cause
+
+```typescript
+import { ValidationError } from 'zod-validation-error';
+
+try {
+  // do something that throws an error
+} catch (err) {
+  throw new ValidationError('Something went deeply wrong', { cause: err });
+}
+```
+
+### How to use `ValidationError` with custom "error map"
+
+Zod supports customizing error messages by providing a custom "error map". You may combine this with `zod-validation-error` to produce user-friendly messages.
+
+#### Example: produce user-friendly error messages using the `customError` property
+
+If all you need is to produce user-friendly error messages you may use the `customError` property.
+
+```typescript
+import { z as zod } from 'zod';
+import { createErrorMap } from 'zod-validation-error';
+
+zod.config({
+  customError: createErrorMap({
+    includePath: true,
+  }),
+});
+```
+
+`zod-validation-error` will respect the `customError` property when it is set, no further configuration is needed.
+
+### Does `zod-validation-error` support CommonJS
+
+Yes, `zod-validation-error` supports CommonJS out-of-the-box. All you need to do is import it using `require`.
+
+#### Example
+
+```typescript
+const { ValidationError } = require('zod-validation-error');
+```
+
+## Contribute
+
+Source code contributions are most welcome. Please open a PR, ensure the linter is satisfied and all tests pass.
+
+#### We are hiring
+
+Causaly is building the world's largest biomedical knowledge platform, using technologies such as TypeScript, React and Node.js. Find out more about our openings at https://jobs.ashbyhq.com/causaly.
+
+## License
+
+MIT
